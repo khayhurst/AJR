@@ -269,43 +269,43 @@ function initFormValidation() {
       return;
     }
 
-    // Capture values
-    const name = document.getElementById('form-name').value;
-    const phone = document.getElementById('form-phone').value;
-    const email = document.getElementById('form-email').value || 'Not provided';
-    const service = document.getElementById('form-service').value;
-    const location = document.getElementById('form-location').value;
-    const details = document.getElementById('form-details').value;
+    // Show sending status
+    statusBox.className = 'form-status';
+    statusBox.style.display = 'block';
+    statusBox.textContent = 'Sending your request...';
 
-    // Build mailto components
-    const recipient = 'ajrhaul@gmail.com';
-    const subject = `AJR Estimate Request: ${service} - ${name}`;
-    const body = `AJR Junk Removal & Flooring Estimate Request\n` +
-                 `=========================================\n\n` +
-                 `Name: ${name}\n` +
-                 `Phone: ${phone}\n` +
-                 `Email: ${email}\n` +
-                 `Service Required: ${service}\n` +
-                 `Location: ${location}\n\n` +
-                 `Project Details:\n` +
-                 `${details}\n\n` +
-                 `Sent via AJR Website Contact Form`;
+    // Submit form via fetch to the action URL (Formspree)
+    const formData = new FormData(form);
 
-    // Construct Mailto Link
-    const mailtoUrl = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    // Show success details & redirect
-    statusBox.className = 'form-status success';
-    statusBox.innerHTML = `
-      <strong>Request Formatted Successfully!</strong><br>
-      Your email client will open to send the request.<br><br>
-      <em>If your email client didn't open automatically, please send your project details to <strong>${recipient}</strong> directly.</em>
-    `;
-
-    // Open mail client
-    window.location.href = mailtoUrl;
-
-    // Reset Form
-    form.reset();
+    fetch(form.action, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        statusBox.className = 'form-status success';
+        statusBox.innerHTML = `
+          <strong>Thank You!</strong><br>
+          Your estimate request has been sent successfully. We will get back to you shortly!
+        `;
+        form.reset();
+      } else {
+        response.json().then(data => {
+          if (data && data.errors) {
+            statusBox.textContent = data.errors.map(error => error.message).join(', ');
+          } else {
+            statusBox.textContent = 'Oops! There was a problem submitting your form.';
+          }
+          statusBox.className = 'form-status error';
+        });
+      }
+    })
+    .catch(error => {
+      statusBox.className = 'form-status error';
+      statusBox.textContent = 'Oops! There was a network problem submitting your form. Please try again or call us directly.';
+    });
   });
 }
